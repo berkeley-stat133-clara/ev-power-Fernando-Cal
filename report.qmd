@@ -3,27 +3,188 @@ title: "EV Power - Lab 4 Project Report"
 format: typst
 ---
 
+## How does the percentage of renewable energy in each U.S. state change from 2021 to 2023?
+
 # Example Solution 1
 
 ## **Part 0: libraries**
 
 ```{r}
+install.packages("stringr")
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("readr")
 
+library(stringr)
+library(tidyverse)
+library(dplyr)
+library(readr)
 ```
 
 ## **Part 1:** **Defining Research Question**
 
-Chosen Question:
+Chosen Question: Do states with a higher percentage of. renewable energy usage relative to their total energy consumption have a greater concentration of EV registrations?
 
 ## **Part 2: Data Preparation and Cleaning**
 
 ```{r}
+# csv files
+renew_use_21 <- read.csv("/Users/fernando/Desktop/ev-power-Fernando-Cal/data/renew-use-2021.csv")
+renew_use_22 <- read.csv("/Users/fernando/Desktop/ev-power-Fernando-Cal/data/renew-use-2022.csv")
+renew_use_23 <- read.csv("/Users/fernando/Desktop/ev-power-Fernando-Cal/data/renew-use-2023.csv")
 
+total_use_21 <- read.csv("/Users/fernando/Desktop/ev-power-Fernando-Cal/data/total-use-2021.csv")
+total_use_22 <- read.csv("/Users/fernando/Desktop/ev-power-Fernando-Cal/data/total-use-2022.csv")
+total_use_23 <- read.csv("/Users/fernando/Desktop/ev-power-Fernando-Cal/data/total-use-2023.csv")
+
+ev_registrations <- read.csv("/Users/fernando/Desktop/ev-power-Fernando-Cal/data/ev-registrations-by-state-2023.csv")
+
+
+# data prep and cleaning
+
+renew_use_21 <- renew_use_21 |>
+    rename(
+        state = State,
+        energy_source = Energy_Source, 
+        renewable_use_2021 = Renewable_Use_2021
+    ) |> 
+    mutate(
+        renewable_use_2021 = as.numeric(str_replace_all(renewable_use_2021, "[^0-9\\.]", ""))
+    
+    )
+
+renew_use_22 <- renew_use_22 |>
+    rename(
+        state = State,
+        energy_source = Energy_Source, 
+        renewable_use_2022 = Renewable_Use_2022
+    ) |> 
+    mutate(
+        renewable_use_2022 = as.numeric(str_replace_all(renewable_use_2022, "[^0-9\\.]", ""))
+    
+    )
+
+renew_use_23 <- renew_use_23 |>
+    rename(
+        state = State,
+        energy_source = Energy_Source, 
+        renewable_use_2023 = Renewable_Use_2023
+    ) |> 
+    mutate(
+        renewable_use_2023 = as.numeric(str_replace_all(renewable_use_2023, "[^0-9\\.]", ""))
+    
+    )
+
+
+
+total_use_21 <- total_use_21 |> 
+    rename(
+        energy_source = Energy_Source
+    ) |>
+        mutate( 
+        # CLEANING STEPS
+        energy_source = str_to_lower(energy_source),
+        
+        energy_source = str_replace_all(energy_source, "\\(.*\\)", ""),
+        
+        energy_source = str_replace_all(energy_source, "[^a-z0-9]+", "_"), 
+        
+        energy_source = str_replace(energy_source, "^_", ""), 
+        
+        energy_source = str_replace(energy_source, "_$", "") ,
+
+        # STANDARIZED ROW NAMES
+        energy_source = case_when(
+            str_detect(energy_source, "coal") ~ "coal",
+            str_detect(energy_source, "natural_gas|naturalgas") ~ "natural_gas",
+            str_detect(energy_source, "nuclear") ~ "nuclear",
+            str_detect(energy_source, "renewable|renewables") ~ "total_renewable",
+            TRUE ~ energy_source
+    )
+) 
+
+total_use_22 <- total_use_22 |> 
+    rename(
+        energy_source = Energy_Source
+    ) |>
+     mutate(
+        energy_source = str_to_lower(energy_source),
+        
+        energy_source = str_replace_all(energy_source, "\\(.*\\)", ""),
+        
+        energy_source = str_replace_all(energy_source, "[^a-z0-9]+", "_"), 
+        
+        energy_source = str_replace(energy_source, "^_", ""), 
+        
+        energy_source = str_replace(energy_source, "_$", ""),
+
+        # STANDARIZED ROW NAMES
+        energy_source = case_when(
+            str_detect(energy_source, "coal") ~ "coal",
+            str_detect(energy_source, "natural_gas|naturalgas") ~ "natural_gas",
+            str_detect(energy_source, "nuclear") ~ "nuclear",
+            str_detect(energy_source, "renewable|renewables") ~ "total_renewable",
+            TRUE ~ energy_source
+    )
+)
+
+total_use_23 <- total_use_23 |> 
+    rename(
+        energy_source = Energy_Source
+    ) |>
+     mutate(
+        energy_source = str_to_lower(energy_source),
+        
+        energy_source = str_replace_all(energy_source, "\\(.*\\)", ""),
+        
+        energy_source = str_replace_all(energy_source, "[^a-z0-9]+", "_"), 
+        
+        energy_source = str_replace(energy_source, "^_", ""), 
+        
+        energy_source = str_replace(energy_source, "_$", ""),
+
+        # STANDARIZED ROW NAMES
+        energy_source = case_when(
+            str_detect(energy_source, "coal") ~ "coal",
+            str_detect(energy_source, "natural_gas|naturalgas") ~ "natural_gas",
+            str_detect(energy_source, "nuclear") ~ "nuclear",
+            str_detect(energy_source, "renewable|renewables") ~ "total_renewable",
+            TRUE ~ energy_source
+    )
+)
+
+
+ev_registrations <- ev_registrations |>
+    rename(
+        state = STATE
+    )
 ```
 
 ## **Part 3: Joining / Pivoting Datasets for Analysis**
 
 ```{r}
+total_use_21 <- total_use_21 |>
+    pivot_longer(
+        cols = !energy_source,       
+        names_to = "state",          
+        values_to = "total_use_2021"
+    ) 
+
+total_use_22 <- total_use_22 |>
+    pivot_longer(
+        cols = !energy_source,       
+        names_to = "state",          
+        values_to = "total_use_2022"
+    ) 
+
+total_use_23 <- total_use_23 |>
+    pivot_longer(
+        cols = !energy_source,      
+        names_to = "state",        
+        values_to = "total_use_2023"
+    )
+
+
 
 ```
 
